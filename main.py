@@ -28,8 +28,8 @@ xitron_q_string=""
 with open('ch1_q_string.txt') as query_file:
     xitron_q_string=query_file.readline()
 for x in range(num_harms):
-    ch1_query_with_harms+=f',V:CH1:H{x+1},A:CH1:H{x+1}'
-ch1_query_with_harms+='\n'
+    xitron_q_string+=f',V:CH1:H{x+1},A:CH1:H{x+1}'
+xitron_q_string+='\n'
 print(f'query string: {repr(xitron_q_string)}')
 
 # create log file and add headers
