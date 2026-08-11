@@ -10,6 +10,7 @@ xitron_port='10733'
 test_name=input("Enter name for test: ")
 test_duration=int(input("Enter test duration in seconds: "))
 num_samples=test_duration       # hard-coded 1 second logging
+num_harms=15
 
 
 # port info lists
@@ -19,12 +20,19 @@ get_value_functions=[get_cold_temp_value,get_hot_temp_value,get_cold_pres_value,
 column_headers='sample_num,epoch_timestamp_ms,human_timestamp,'
 
 
-# set up column headers in the log file and UI
+# compute output file name
 log_file_name=test_name+"_"+str(int(time.time()*1000))+".csv"
+
+# get power analyzer query string with harmonics
 xitron_q_string=""
 with open('ch1_q_string.txt') as query_file:
-    xitron_q_string=query_file.readline()+'\n'
+    xitron_q_string=query_file.readline()
+for x in range(num_harms):
+    ch1_query_with_harms+=f',V:CH1:H{x+1},A:CH1:H{x+1}'
+ch1_query_with_harms+='\n'
 print(f'query string: {repr(xitron_q_string)}')
+
+# create log file and add headers
 with open(log_file_name,'w') as log_file:
     log_file.write('sample_num,epoch_timestamp_ms,human_timestamp,')
     for port_num in range(8):
