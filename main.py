@@ -1,0 +1,53 @@
+from funcs import *
+import socket
+
+xitron_ip='192.168.99.147'
+xitron_port='10733'
+
+test_name=input("Enter name for test: ")
+test_duration=int(input("Enter test duration in seconds: "))
+num_samples=test_duration       # hard-coded 1 second logging
+
+# port info lists
+table_names=["Cold Temp.","Hot Temp.","Cold Pres.","Hot Pres.","Cold Flow","Hot Flow","Near Ambi.","Far Ambi"]
+get_unit_functions=[get_cold_temp_unit,get_hot_temp_unit,get_cold_pres_unit,get_hot_pres_unit,get_cold_flow_unit,get_hot_flow_unit,get_temp_rh_near_unit,get_temp_rh_far_unit]
+get_value_functions=[get_cold_temp_value,get_hot_temp_value,get_cold_pres_value,get_hot_pres_value,get_cold_flow_value,get_hot_flow_value,get_temp_rh_near_value,get_temp_rh_far_value]
+column_headers='sample_num,epoch_timestamp_ms,human_timestamp,'
+
+
+# set up column headers in the log file and UI
+log_file_name=test_name+"_"+str(int(time.time()*1000))+".csv"
+xitron_q_string=""
+with open('ch1_q_string.txt') as query_file:
+    xitron_q_string=query_file.readline().removeprefix('READ?,')
+with open(log_file_name,'w') as log_file:
+    log_file.write('sample_num,epoch_timestamp_ms,human_timestamp,')
+    for port_num in range(8):
+        requested_unit=get_unit_functions[port_num]()
+        if requested_unit=='offline':
+            requested_unit='???'
+        log_file.write(f'{table_names[port_num]} ({requested_unit}),')
+        time.sleep(0.1)
+    log_file.write(xitron_q_string)
+    log_file.write('\n')
+
+xitron_socket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+xitron_socket.connect((xitron_ip,int(xitron_port)))
+xitron_socket.settimeout(1)
+
+
+for sample_num in range(num_samples):
+    timestamp_data=make_timestamp(sample_num)
+    requested_values=[]
+    for port_num in range(8):
+        requested_value=get_value_functions[port_num]()
+        requested_values.append(requested_value)
+    xitron_socket.sendall(xitron_q_string.encode())
+    response_string=xitron_socket.recv(4096).decode()
+    
+    with open(log_file_name,'a') as log_file:
+        log_file.write(f" {timestamp_data['sample_num']} , {timestamp_data['epoch_timestamp_ms']} , {timestamp_data['human_timestamp']},")
+        for port_num in range(8):
+            log_file.write(f'{requested_values[port_num]},')
+        log_file.write(response_string)
+        log_file.write('\n')
