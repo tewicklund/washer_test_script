@@ -9,8 +9,10 @@ xitron_port='10733'
 # user input
 test_name=input("Enter name for test: ")
 test_duration=int(input("Enter test duration in seconds: "))
-num_samples=test_duration       # hard-coded 1 second logging
+seconds_between_samples=1
+num_samples=int(test_duration/seconds_between_samples)     
 num_harms=15
+samples_btwn_ambi=10
 
 
 # port info lists
@@ -18,6 +20,9 @@ table_names=["Cold Temp.","Hot Temp.","Cold Pres.","Hot Pres.","Cold Flow","Hot 
 get_unit_functions=[get_cold_temp_unit,get_hot_temp_unit,get_cold_pres_unit,get_hot_pres_unit,get_cold_flow_unit,get_hot_flow_unit,get_temp_rh_near_unit,get_temp_rh_far_unit]
 get_value_functions=[get_cold_temp_value,get_hot_temp_value,get_cold_pres_value,get_hot_pres_value,get_cold_flow_value,get_hot_flow_value,get_temp_rh_near_value,get_temp_rh_far_value]
 column_headers='sample_num,epoch_timestamp_ms,human_timestamp,'
+near_cache="75.9 : 41.6"
+far_cache="75.9 : 41.6"
+
 
 
 # compute output file name
@@ -57,12 +62,21 @@ for sample_num in range(num_samples):
     # collect timestamp info
     sample_time=time.time()
     timestamp_data=make_timestamp(sample_num)
+    requested_values=[]
 
     # collect data from io-link hub
-    requested_values=[]
-    for port_num in range(8):
-        requested_value=get_value_functions[port_num]()
-        requested_values.append(requested_value)
+    if (sample_num%samples_btwn_ambi==0):
+        for port_num in range(8):
+            requested_value=get_value_functions[port_num]()
+            requested_values.append(requested_value)
+        near_cache=requested_values[6]
+        far_cache=requested_values[7]
+    else:
+        for port_num in range(6):
+            requested_value=get_value_functions[port_num]()
+            requested_values.append(requested_value)
+        requested_values.append(near_cache)
+        requested_values.append(far_cache)
 
     # collect data from power analyzer
     xitron_socket.sendall(xitron_q_string.encode())
@@ -74,13 +88,13 @@ for sample_num in range(num_samples):
         for port_num in range(8):
             log_file.write(f'{requested_values[port_num]},')
         log_file.write(response_string)
-        print(f'response: {repr(response_string)}')
+        #print(f'response: {repr(response_string)}')
         log_file.write('\n')
 
     # wait till next second to log next data point
     end_time=time.time()
-    if end_time-sample_time>1:
+    if end_time-sample_time>int(seconds_between_samples):
         print(f"warning: logging too fast: {end_time-sample_time} seconds to log this point")
 
-    while time.time()-sample_time<1:
+    while time.time()-sample_time<int(seconds_between_samples):
         pass
