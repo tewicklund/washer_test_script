@@ -59,7 +59,7 @@ def make_timestamp(sample_number: int) -> dict:
 # general function for getting bytes from iolink hub
 def _get_byte_array(url: str) -> list[int]:
     """GET an IO-Link value and return its byte array."""
-    with urllib.request.urlopen(url, timeout=1.0) as response:
+    with urllib.request.urlopen(url, timeout=0.1) as response:
         data = json.load(response)
 
     if not isinstance(data, dict):

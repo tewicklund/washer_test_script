@@ -37,7 +37,7 @@ with open('ch1_q_string.txt') as query_file:
 for x in range(num_harms):
     xitron_q_string+=f',V:CH1:H{x+1},A:CH1:H{x+1}'
 xitron_q_string+='\n'
-print(f'query string: {repr(xitron_q_string)}')
+#print(f'query string: {repr(xitron_q_string)}')
 
 # create log file and add headers
 with open(log_file_name,'w') as log_file:
@@ -61,6 +61,9 @@ if xitron_present:
 
 # main test loop
 for sample_num in range(num_samples):
+
+    # print out for status
+    print(f'Collecting sample {sample_num} / {num_samples}')
 
     # collect timestamp info
     sample_time=time.time()
