@@ -63,7 +63,7 @@ if xitron_present:
 for sample_num in range(num_samples):
 
     # print out for status
-    print(f'Collecting sample {sample_num} / {num_samples}')
+    print(f'Collecting sample {sample_num} / {num_samples}',flush=True)
 
     # collect timestamp info
     sample_time=time.time()
@@ -101,9 +101,13 @@ for sample_num in range(num_samples):
         log_file.write('\n')
 
     # wait till next second to log next data point
-    end_time=time.time()
-    if end_time-sample_time>int(seconds_between_samples):
-        print(f"warning: logging too fast: {end_time-sample_time} seconds to log this point")
+    end_time = time.time()
+    elapsed = end_time - sample_time
 
-    while time.time()-sample_time<int(seconds_between_samples):
-        pass
+    if elapsed > seconds_between_samples:
+        print(
+            f"warning: logging too slow: {elapsed:.3f} seconds to log this point",
+            flush=True
+        )
+    else:
+        time.sleep(seconds_between_samples - elapsed)
