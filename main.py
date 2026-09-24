@@ -1,5 +1,7 @@
 from funcs import *
 
+# is power analyzer even connected?
+xitron_present=False
 
 # power analyzer constants
 xitron_ip='192.168.99.7'
@@ -51,9 +53,10 @@ with open(log_file_name,'w') as log_file:
 
 
 # prep power analyzer for logging
-xitron_socket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-xitron_socket.connect((xitron_ip,int(xitron_port)))
-xitron_socket.settimeout(1)
+if xitron_present:
+    xitron_socket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    xitron_socket.connect((xitron_ip,int(xitron_port)))
+    xitron_socket.settimeout(1)
 
 
 # main test loop
@@ -79,15 +82,18 @@ for sample_num in range(num_samples):
         requested_values.append(far_cache)
 
     # collect data from power analyzer
-    xitron_socket.sendall(xitron_q_string.encode())
-    response_string=xitron_socket.recv(4096).decode().rstrip('\r\n')
+    if xitron_present:
+        xitron_socket.sendall(xitron_q_string.encode())
+        response_string=xitron_socket.recv(4096).decode().rstrip('\r\n')
 
     # write data from both to log
     with open(log_file_name,'a') as log_file:
         log_file.write(f" {timestamp_data['sample_num']} , {timestamp_data['epoch_timestamp_ms']} , {timestamp_data['human_timestamp']},")
         for port_num in range(8):
             log_file.write(f'{requested_values[port_num]},')
-        log_file.write(response_string)
+
+        if xitron_present:
+            log_file.write(response_string)
         #print(f'response: {repr(response_string)}')
         log_file.write('\n')
 
